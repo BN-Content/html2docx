@@ -1,26 +1,19 @@
 # html3docx
-A fork of https://github.com/pqzx/html2docx.  This version will focus on expedient changes for our particular use case,
-and thus will receive infrequent updates.
+A fork of https://github.com/johnjor/html2docx, which itself is a fork of https://github.com/pqzx/html2docx.  This version will focus on support of right-to-left languages.
+
+Consider it a replacement to either [html3docx](https://pypi.org/project/html3docx/) or [htmldocx](https://pypi.org/project/htmldocx/); it should work in place of either of them as-is.
 
 Dependencies: `python-docx` & `bs4`
 
 ### To install
 
-`pip install html3docx`
-
-PyPI: https://pypi.org/project/html3docx/
+We have not listed this work on PyPI.
 
 ### Improvements
 
-- Fix for KeyError when handling an img tag without a src attribute.
-- Images with a width attribute will be scaled according to that width.
-- Fix for AttributeError when handling a leading br tag, either at the top of the HTML snippet, or within a td or th cell.
-- Fix for IndexError when a table has more cells in latter rows than in the first row.
-- Ordered lists will now restart at 1. when proceeded by a paragraph that is not a numbered list.
-- Parameterized image fetcher function.
-- Parameterized default styles for OL, UL, and TABLE tags.
-- Fix for KeyError when handling an anchor with no href attribute.
-- Added support for images with base64 encoded data src.
+- Parameterized `language`, `is_rtl`, `bidi`, and `east_asia` as part of initial call.
+- Added `set_paragraph_direction` and `set_run_language` and added calls wherever paragraphs and runs were instantiated.
+- Tested locally to verify. Have verified Arabic; YMMV on other languages (mostly depending on Word's support, I'd guess)
 
 ## Original README
 
