@@ -247,6 +247,8 @@ def set_document_default_language(document, lang_val, east_asia=None, bidi=None)
     Set the document-wide default language for new runs.
     Creates or updates styles.xml -> docDefaults -> rPrDefault -> w:lang
     """
+    if not hasattr(document, "styles"):
+        return
     styles = document.styles._element
     doc_defaults = styles.find(qn("w:docDefaults"))
     if doc_defaults is None:
@@ -345,6 +347,12 @@ class HtmlToDocx(HTMLParser):
         self.ul_style = other.ul_style
         self.ol_style = other.ol_style
         self.image_fetcher = other.image_fetcher
+        # added RWB 2025-11-18
+        self.language = other.language
+        self.bidi = other.bidi
+        self.east_asia = other.east_asia
+        self.is_rtl = other.is_rtl
+        # end RWB add
 
     def get_cell_html(self, soup):
         # Returns string of td element with opening and closing <td> tags removed
