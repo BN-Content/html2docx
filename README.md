@@ -1,5 +1,5 @@
 # html3docx
-A fork of https://github.com/johnjor/html2docx, which itself is a fork of https://github.com/pqzx/html2docx.  This version will focus on support of right-to-left languages.
+A fork of https://github.com/johnjor/html2docx, which itself is a fork of https://github.com/pqzx/html2docx.  This version will focus on support of right-to-left languages and MSWord's "east_asia" languages, Chinese/Japanese/Korean.
 
 Consider it a replacement to either [html3docx](https://pypi.org/project/html3docx/) or [htmldocx](https://pypi.org/project/htmldocx/); it should work in place of either of them as-is.
 
@@ -7,13 +7,31 @@ Dependencies: `python-docx` & `bs4`
 
 ### To install
 
-We have not listed this work on PyPI.
+We have not listed this work on PyPI, you'll need to clone this repo and then `pip install` (or `poetry add`) your local copy.
+
+### To use
+
+**Available parameters**
+
+* `language` use a word language code
+* `bidi` use the language code for your right-to-left language or leave it (defaults to `None`)
+* `east_asia` use the Chinese/Japanese/Korean language code (defaults to `None`)
+* `is_rtl`: boolean (defaults to `False`)
+
+```
+    # go with defaults: `language=en-US`, `bidi=None`, `east_asia=None`, `is_rtl=False`
+    html_docx_parser = HtmlToDocx()
+    # Arabic
+    arabic_html_docx_parser = HtmlToDocx(language="ar-AE", bidi="ar-AE", is_rtl=True)
+    # Chinese
+    chinese_html_docx_parser = HtmlToDocx(language="zh-TW", east_asia="zh-TW")
+```
 
 ### Improvements
 
 - Parameterized `language`, `is_rtl`, `bidi`, and `east_asia` as part of initial call.
 - Added `set_paragraph_direction` and `set_run_language` and added calls wherever paragraphs and runs were instantiated.
-- Tested locally to verify. Have verified Arabic; YMMV on other languages (mostly depending on Word's support, I'd guess)
+- Tested locally to verify. Have verified Arabic and Chinese; YMMV on other languages (mostly depending on Word's support, I'd guess)
 
 ## Original README
 
