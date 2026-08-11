@@ -204,10 +204,19 @@ font_names = {
 }
 
 # added RWB 2025-11-18
-def set_run_language(run, lang_val, east_asia=None, bidi=None):
+def set_run_language(run, lang_val, east_asia=None, bidi=None, rtl=False):
     """
     Set language metadata for spellchecking etc.
     lang_val examples: 'en-US', 'fr-FR', 'ar-SA'
+
+    `rtl=True` also marks the run itself as right-to-left/complex-script
+    (<w:rtl/>, <w:cs/> in <w:rPr>) -- this is what actually needs to be set
+    per-run for Word to correctly place bidi-neutral characters (trailing
+    punctuation like '.'/'?'/':' at the end of an RTL sentence) rather than
+    relying purely on the paragraph's <w:bidi/> plus each run's own strong-
+    direction character content. Call this (not set_paragraph_direction's
+    old run loop, see below) at every point a run is actually created --
+    that's the only place this can reliably apply.
     """
     rPr = run._r.get_or_add_rPr()
     lang = rPr.find(qn("w:lang"))
@@ -219,12 +228,25 @@ def set_run_language(run, lang_val, east_asia=None, bidi=None):
         lang.set(qn("w:eastAsia"), east_asia)
     if bidi:
         lang.set(qn("w:bidi"), bidi)
+    if rtl:
+        run.font.rtl = True
+        run.font.complex_script = True
 
 
 def set_paragraph_direction(paragraph, rtl=True):
     """
     Set paragraph base direction (RTL or LTR).
     Adds <w:bidi/> for RTL, removes it for LTR.
+
+    Does NOT set run-level rtl/complex_script -- every call site invokes
+    this immediately after creating a brand-new, still-empty paragraph
+    (before any run is added to it), so a `for run in paragraph.runs: ...`
+    loop here would always iterate zero runs and silently do nothing. Was
+    previously written that way (a real bug: paragraph-level <w:bidi/> was
+    applied correctly, but no run ever got <w:rtl/>/<w:cs/>, which showed up
+    as trailing sentence punctuation rendering on the wrong side in Word).
+    Run-level RTL is set by set_run_language(..., rtl=True) instead, at the
+    point each run is actually created.
     """
     p = paragraph._p
     pPr = p.get_or_add_pPr()
@@ -236,10 +258,6 @@ def set_paragraph_direction(paragraph, rtl=True):
     else:
         if bidi_elem is not None:
             pPr.remove(bidi_elem)
-    # also propagate to runs (font shaping)
-    for run in paragraph.runs:
-        run.font.rtl = rtl
-        run.font.complex_script = rtl
 
 
 def set_document_default_language(document, lang_val, east_asia=None, bidi=None):
@@ -566,7 +584,7 @@ class HtmlToDocx(HTMLParser):
 
         # Create sub-run
         subrun = self.paragraph.add_run()
-        set_run_language(subrun, self.language, bidi=self.language)
+        set_run_language(subrun, self.language, bidi=self.language, rtl=self.is_rtl)
         rPr = docx.oxml.shared.OxmlElement('w:rPr')
 
         # add default color
@@ -618,7 +636,7 @@ class HtmlToDocx(HTMLParser):
                 self.paragraph = self.doc.add_paragraph()
                 set_paragraph_direction(self.paragraph, self.is_rtl)
                 self.run = self.paragraph.add_run()
-                set_run_language(self.run, self.language, bidi=self.language)
+                set_run_language(self.run, self.language, bidi=self.language, rtl=self.is_rtl)
             return
 
         self.tags[tag] = current_attrs
@@ -674,7 +692,7 @@ class HtmlToDocx(HTMLParser):
         # set new run reference point in case of leading line breaks
         if tag in ['p', 'li', 'pre']:
             self.run = self.paragraph.add_run()
-            set_run_language(self.run, self.language, bidi=self.language)
+            set_run_language(self.run, self.language, bidi=self.language, rtl=self.is_rtl)
 
         # add style
         if not self.include_styles:
@@ -736,7 +754,7 @@ class HtmlToDocx(HTMLParser):
         else:
             # If there's a link, don't put the data directly in the run
             self.run = self.paragraph.add_run(data)
-            set_run_language(self.run, self.language, bidi=self.language)
+            set_run_language(self.run, self.language, bidi=self.language, rtl=self.is_rtl)
             spans = self.tags['span']
             for span in spans:
                 if 'style' in span:
